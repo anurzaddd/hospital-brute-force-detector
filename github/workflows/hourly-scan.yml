@@ -1,0 +1,30 @@
+name: Hourly Brute Force Check
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # هر ساعت اجرا می‌شود
+  workflow_dispatch:       # قابلیت اجرای دستی
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install requests
+      - name: Run brute force detector (simulated Linux log)
+        run: |
+          # ایجاد یک فایل auth.log مصنوعی برای تست
+          mkdir -p /tmp/logs
+          echo "May 23 10:15:22 server sshd[12345]: Failed password for invalid user admin from 192.168.1.100 port 54321" > /tmp/logs/auth.log
+          python detect_bruteforce.py --os linux --log-file /tmp/logs/auth.log --minutes 60 --threshold 1
+      - name: Upload alert log (if any)
+        uses: actions/upload-artifact@v4
+        with:
+          name: alert-result
+          path: |
+            *.log
